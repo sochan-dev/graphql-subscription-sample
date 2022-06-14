@@ -30,15 +30,6 @@ export class PostResolver {
     return this.prisma.post.findMany();
   }
 
-  @Query(() => Post)
-  async findPost(@Args('id') id: number) {
-    return this.prisma.post.findUnique({
-      where: {
-        id: id,
-      },
-    });
-  }
-
   @Query(() => [Post])
   @UseGuards(GqlAuthGuard)
   async getMyPosts(@Args('authorId') authorId: number) {
@@ -82,7 +73,7 @@ export class PostResolver {
     const newPost = this.prisma.post.create({
       data: { title, description, photo, authorId },
     });
-    pubsub.publish('postAdded', { postAdded: newPost });
+    pubsub.publish('updatedPost', { updatedPost: newPost });
     return newPost;
   }
 
@@ -95,10 +86,12 @@ export class PostResolver {
     @Args('photo') photo: string,
     @Args('authorId') authorId: number,
   ) {
-    return this.prisma.post.update({
+    const newPost = this.prisma.post.update({
       where: { id: id },
       data: { title, description, photo, authorId },
     });
+    pubsub.publish('updatedPost', { updatedPost: newPost });
+    return newPost;
   }
 
   @Mutation(() => Post)
@@ -125,13 +118,15 @@ export class PostResolver {
 
   @Mutation(() => Post)
   async deletePost2(@Args('id') id: number) {
-    return this.prisma.post.delete({
+    const deletedPost = this.prisma.post.delete({
       where: { id: id },
     });
+    pubsub.publish('deletedPost', { deletedPost: deletedPost });
+    return deletedPost;
   }
 
   @Subscription(() => Post, {
-    name: 'postAdded', //明示的にnameを指定するとここをsubsucription名としてSDLを出力できる。まあ気にしなくていい。ここの第二引数無くていい。
+    name: 'updatedPost', //明示的にnameを指定するとここをsubsucription名としてSDLを出力できる。まあ気にしなくていい。ここの第二引数無くていい。
     /**1つpayloadはイベントペイロード（イベント発行者から送信されたもの）を含み、もう1つvariablesはサブスクリプションリクエスト中に渡された引数を取ります。このイベントをクライアントリスナーに公開するかどうかを決定するブール値を返します。 */
     /*filter: (payload, variables) => {
       console.log('payload↓');
@@ -148,11 +143,42 @@ export class PostResolver {
       return value;
     },*/
   })
-  async postAdded() {
-    return pubsub.asyncIterator('postAdded');
+  async updatedPost() {
+    return pubsub.asyncIterator('updatedPost');
   }
+
+  @Subscription(() => Post)
+  async deletedPost() {
+    return pubsub.asyncIterator('deletedPost');
+  }
+
   @ResolveField(() => User)
   author(@Parent() post: Post) {
     return this.prisma.user.findUnique({ where: { id: post.authorId } });
+  }
+
+  //☆課題
+  @Query(() => Post)
+  async findPost(@Args('id') id: number) {
+    return this.prisma.post.findUnique({
+      where: {
+        id: id,
+      },
+    });
+  }
+
+  //☆課題
+  @Mutation(() => Post)
+  async updatePost3(@Args('id') id: number, @Args('title') title: string) {
+    return this.prisma.post.update({
+      where: { id: id },
+      data: { title },
+    });
+  }
+
+  //☆課題
+  @Subscription(() => Post)
+  async insertedPost() {
+    return pubsub.asyncIterator('insertedPost');
   }
 }

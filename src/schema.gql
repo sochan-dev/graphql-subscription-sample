@@ -49,5 +49,6 @@ type Mutation {
 }
 
 type Subscription {
-  postAdded: Post!
+  updatedPost: Post!
+  deletedPost: Post!
 }

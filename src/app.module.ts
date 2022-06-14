@@ -14,10 +14,10 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
-      /*subscriptions: {
+      subscriptions: {
         'graphql-ws': true,
-      },*/
-      installSubscriptionHandlers: true,
+      },
+      //installSubscriptionHandlers: true,
     }),
   ],
   controllers: [AppController],
